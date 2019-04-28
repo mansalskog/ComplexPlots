@@ -1,10 +1,10 @@
-function nonNegativeModulo(x, m) {
-  return ((x % m) + m) % m;
+function fractionalPart(x) {
+  return x - Math.floor(x);
 }
 
 function complexColor(z) {
-  let light = nonNegativeModulo(Math.log(z.abs()) / Math.log(2), 1);
-  let hue = nonNegativeModulo(z.arg() / (2 * Math.PI), 1);
+  let light = fractionalPart(Math.log(z.abs()) / Math.log(2));
+  let hue = fractionalPart(z.arg() / (2 * Math.PI));
   let r = light * Math.min(2 * hue, 1);
   let g = light * hue;
   let b = 0;
@@ -35,7 +35,7 @@ function drawComplexFunc(canvas, funcText, minR, minI, maxR, maxI) {
 
 window.addEventListener('load', function() {
   let canvas = document.getElementById('canvas');
-  canvas.height = Math.floor(window.innerHeight * 0.85);
+  canvas.height = Math.floor(window.innerHeight * 0.80);
   canvas.width = canvas.height;
   let funcInput = document.getElementById('function');
   let drawButton = document.getElementById('draw');
@@ -63,4 +63,13 @@ window.addEventListener('load', function() {
       drawCallback();
     });
   }
+
+  let allLims = document.getElementById('allLims');
+  allLims.addEventListener('input', function() {
+    if (parseFloat(allLims.value) >= 0) {
+      // ugly javascript type shenanigans
+      maxReIn.value = maxImIn.value = allLims.value;
+      minReIn.value = minImIn.value = -allLims.value;
+    }
+  });
 });

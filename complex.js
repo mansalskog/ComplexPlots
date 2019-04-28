@@ -5,7 +5,7 @@ function Complex(re, im) {
 
 Complex.fromPolar = function(abs, arg) {
   return new Complex(abs * Math.cos(arg), abs * Math.sin(arg));
-}
+};
 
 /* Reads a complex number from a string. Not for use with ComplexExpr.
  */
@@ -24,7 +24,7 @@ Complex.fromString = function(txt) {
     return new Complex(Number.parseFloat(txt), 0);
   }
   throw 'Could not parse complex number: ' + txt;
-}
+};
 
 /* Returns a human- and machine-readable text representation of the number.
  */
@@ -36,61 +36,66 @@ Complex.prototype.toString = function() {
     return this.re + '';
   }
   return this.re + '+' + this.im + 'i';
-}
+};
+
+/* Checks for exact equality. Watch out for floating-point problems. */
+Complex.prototype.equals = function(that) {
+  return this.re == that.re && this.im == that.im;
+};
 
 /* Here follow some standard arithmetic functions for complex numbers */
 
 Complex.prototype.add = function(that) {
   return new Complex(this.re + that.re, this.im + that.im);
-}
+};
 
 Complex.prototype.mul = function(that) {
   return new Complex(this.re * that.re - this.im * that.im,
                      this.re * that.im + that.re * this.im);
-}
+};
 
 Complex.prototype.sub = function(that) {
   return new Complex(this.re - that.re, this.im - that.im);
-}
+};
 
 Complex.prototype.div = function(that) {
   let absSqr = that.re * that.re + that.im * that.im;
   return new Complex((this.re * that.re - this.im * -that.im) / absSqr,
                      (this.re * -that.im + that.re * this.im) / absSqr);
-}
+};
 
 Complex.prototype.neg = function() {
   return new Complex(-this.re, -this.im);
-}
+};
 
 Complex.prototype.conj = function() {
   return new Complex(this.re, -this.im);
-}
+};
 
 Complex.prototype.abs = function() {
   return Math.sqrt(this.re * this.re + this.im * this.im);
-}
+};
 
 Complex.prototype.arg = function() {
   return Math.atan2(this.im, this.re);
-}
+};
 
 Complex.prototype.log = function() {
   return new Complex(Math.log(this.abs()), this.arg());
-}
+};
 
 Complex.prototype.exp = function() {
   // TODO: is this really correct?
   return Complex.fromPolar(Math.exp(this.re), this.im);
-}
+};
 
 Complex.prototype.pow = function(that) {
   return that.mul(this.log()).exp();
-}
+};
 
-/* Checks for exact equality. Watch out for floating-point problems. */
-Complex.prototype.equals = function(that) {
-  return this.re == that.re && this.im == that.im;
+Complex.prototype.sin = function() {
+  let i = new Complex(0, 1);
+  return this.mul(i).exp().sub(this.mul(i.neg()).exp()).div(new Complex(0, 2));
 }
 
 // mapping from symbol/token to method name
@@ -105,6 +110,7 @@ const UNARY_OPS = {
   '-': 'neg',
   'Log': 'log',
   'exp': 'exp',
+  'sin': 'sin',
   // TODO: maybe add trailing spaces to prevent things like "expz"
   // TODO: trigonometric functions (and hyperbolic)
 };
@@ -148,7 +154,7 @@ ComplexExpr.prototype.toString = function() {
     // parenthezised to guarantee correct parsing
     return '(' + this.left.toString() + ' ' + this.opSym + ' ' + this.right.toString() + ')';
   }
-}
+};
 
 /* Evaluates a function of one variable.
  * Takes a name (String) and a Complex.
@@ -173,7 +179,7 @@ ComplexExpr.prototype.eval = function(name, value) {
     let binMethod = BINARY_OPS[this.opSym];
     return left[binMethod](right);
   }
-}
+};
 
 // TODO: Create a function for replacing a EXPR_NAME with another arbitrary ComplexExpr
 
@@ -185,7 +191,7 @@ ComplexExpr.parse = function(txt) {
     throw 'No parse on: ' + txt;
   }
   return e;
-}
+};
 
 /* Parses a real or imaginary number. For use with ComplexExpr. Returns null on leading spaces.
  * Returns an array [z, txt], containing the number (or null) and the remaning text.
@@ -205,7 +211,7 @@ Complex.parseSingle = function(txt) {
     return [new Complex(Number.parseFloat(re), 0), txt.slice(re.length)];
   }
   return [null, txt];
-}
+};
 
 
 /* Parses a complex number or a name (as specified by NAME_REGEX).
@@ -223,7 +229,7 @@ ComplexExpr.parseValueOrName = function(txt) {
     return [new ComplexExpr(EXPR_NAME, name), tst.slice(name.length)];
   }
   return [null, txt];
-}
+};
 
 /* Parses a number of unary operators followed by a valueOrName
  * Example: op op value => (op (op value))
@@ -255,7 +261,7 @@ ComplexExpr.parseZeroOrMoreUnary = function(opSyms, parseHigherPrec) {
     let expr = ops.reduceRight((acc, sym) => new ComplexExpr(EXPR_UNARY, sym, acc), val);
     return [expr, rem];
   };
-}
+};
 
 /* TODO: describe this mess
  * Return a parser that parses a list of binary operator expressions
@@ -290,7 +296,7 @@ ComplexExpr.parseZeroOrMoreBinary = function(opSyms, parseHigherPrec) {
       return [left, rem];
     }
   };
-}
+};
 
 ComplexExpr.parseMaybeParenthesis = function(parseNoParen, parseInParen) {
   return function(txt) {
@@ -308,14 +314,14 @@ ComplexExpr.parseMaybeParenthesis = function(parseNoParen, parseInParen) {
     rem = rem.slice(1);
     return [inside, rem];
   }
-}
+};
 
 // this is needed to solve the chicken-and-egg-problem caused below
 function hackyThing(txt) {
   return ComplexExpr.parseSums(txt);
 }
 let parseParen = ComplexExpr.parseMaybeParenthesis(ComplexExpr.parseValueOrName, hackyThing); // this depends on parseSums, but parseSums depends on parseTerm
-let parseTerm = ComplexExpr.parseZeroOrMoreUnary(['-', 'exp', 'Log'], parseParen);
+let parseTerm = ComplexExpr.parseZeroOrMoreUnary(['-', 'exp', 'Log', 'sin'], parseParen);
 
 ComplexExpr.parsePower = ComplexExpr.parseZeroOrMoreBinary(['^'], parseTerm);
 // TODO: create a function to parse right-associative exponents, as this is currently wrong
