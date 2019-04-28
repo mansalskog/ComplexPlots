@@ -2,14 +2,81 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Complex domain coloring</title>
+    <title>Complex plots</title>
     <script src="complex.js"></script>
     <script src="plots.js"></script>
     <script src="tests.js"></script>
+    <style>
+input[type="number"] {
+  width: 3em;
+}
+#program {
+  text-align: center;
+}
+    </style>
   </head>
   <body>
-    <canvas id="canvas" width="200" height="200"></canvas>
-    <input id="function" type="text">
-    <button id="draw">Draw</button>
+    <div id="program">
+      <p>
+        <canvas id="canvas" width="200" height="200"></canvas>
+      </p>
+      <p>
+        f(z) =
+        <input id="function" type="text" size="80" value="z">
+        <!-- expanded form of (z + 2) ^ 2 * (z - 1 - 2i) * (z + i) 
+             because the parser does not support parentheses -->
+        <button id="draw">Draw</button>
+      </p>
+      <p>
+        <input id="minRe" type="number" value="-3.0">
+        &le; Re z &le;
+        <input id="maxRe" type="number" value="3.0">
+        ,
+        <input id="minIm" type="number" value="-3.0">
+        &le; Im z &le;
+        <input id="maxIm" type="number" value="3.0">
+      </p>
+      <p>
+        <h3>Clickable examples</h3>
+        Two zeroes and one double zero: <button class="funcSample">(z+2)^2 * (z-1-2i) * (z+i)</button><br>
+        A Möbuis transformation: <button class="funcSample">(z-1) / (z+1)</button><br>
+      </p>
+    </div>
+    <div id="information">
+      <h1>About</h1>
+        This is an interative JavaScript implementation of domain coloring for complex functions.
+        It's inspired by Hans Lundmark's <a href="http://users.mai.liu.se/hanlu09/complex/domain_coloring.html">page on the topic</a>.
+      <h2>Expression syntax</h2>
+      <p>
+        <pre>
+Expr := Sums
+Sums := Products "+" Sums
+      | Products "-" Sums
+      | Products
+Products := Power "*" Products
+          | Power "/" Products
+          | Power
+Power := Unary "^" Unary
+Unary := "-" Paren
+       | "exp" Paren
+       | "Log" Paren
+       | Paren
+Paren := "(" Sums ")"
+       | Value
+       | Name
+Name := "a" | "b" | ... | "h" | "j" | ... | "z"
+Value := Number | Number "i"
+Number := Digits
+        | Digits "." Digits
+        </pre>
+      </p>
+      <h2>Known bugs / to-do</h2>
+      <ul>
+        <li>Parsing of powers is left-associative when it should be right associative</li>
+        <li>The coloring is ugly and should be changed</li>
+        <li>There should be error messages if the expression does not parse</li>
+        <li>The rendering is quite slow, probably because evaluating functions is done in a very inefficient way</li>
+      </ul>
+    </div>
   </body>
 </html>
