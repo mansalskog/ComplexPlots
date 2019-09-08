@@ -12,11 +12,6 @@ precision mediump float;
 
 #define PI 3.1415926535
 
-// TODO remove these
-#define add(z, w) (z + w)
-#define sub(z, w) (z - w)
-#define neg(z) (-z)
-
 // these are neccesary
 #define c_mul(z, w) vec2((z).x * (w).x - (z).y * (w).y, (z).y * (w).x + (z).x * (w).y)
 #define c_div(z, w) (vec2((z).x * (w).x + (z).y * (w).y, (z).y * (w).x - (z).x * (w).y) / length(w) / length(w))
@@ -33,9 +28,14 @@ vec2 c_cos(vec2 z) {
   return (c_exp(vec2(-z.y, z.x)) - c_exp(vec2(z.y, -z.x))) / 2.0;
 }
 
-#define fracPart(x) (x - floor(x))
+#define fracPart(x) abs(x - floor(x))
 
 vec4 colorOf(vec2 z) {
+  float g = 0.05;
+  if (fracPart(z.x) < g || fracPart(z.y) < g) {
+    // TODO make a better grid
+    // return vec4(0.0, 0.0, 0.0, 1.0);
+  }
   float l = fracPart(log(length(z)) / log(2.0));
   float h = fracPart(atan(z.y, z.x) / (2.0 * PI));
   return vec4(l * min(2.0 * h, 1.0), l * h, 0.0, 1.0);
@@ -46,7 +46,7 @@ uniform float uScale;
 uniform vec2 uTranslation;
 
 void main() {
-  vec2 z = (2.0 * gl_FragCoord.xy / uViewportSize - vec2(1.0)) * uScale - uTranslation / uViewportSize;
+  vec2 z = (2.0 * gl_FragCoord.xy / uViewportSize - vec2(1.0)) * uScale + uTranslation / uViewportSize;
   vec2 w = ${expr};
   gl_FragColor = colorOf(w);
 }
@@ -159,8 +159,8 @@ Renderer.prototype.draw = function() {
     let viewportSize = this.gl.getUniformLocation(this.program, 'uViewportSize');
     this.gl.uniform2f(viewportSize, this.canvas.height, this.canvas.width);
 
-    // this.gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    // this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    this.gl.clearColor(0.0, 0.5, 0.0, 1.0);
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
     this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
 }
 
@@ -209,21 +209,32 @@ function onLoad() {
     });
     canvas.addEventListener('mousemove', e => {
         if (drag) {
-            tx += e.movementX * scale;
-            ty -= e.movementY * scale;
+            tx -= e.movementX * scale;
+            ty += e.movementY * scale;
             drawCallback();
         }
     });
 
     let changeExpr = () => {
         let expr = ComplexExpr.parse(funcInput.value).toGLSL();
+        console.log('expr: ', expr);
         renderer.setExpr(expr);
-        scale = 3.0;
-        tx = ty = 0;
         drawCallback();
     };
     drawButton.addEventListener('click', changeExpr);
+    funcInput.addEventListener('keyup', e => {
+        if (e.key == 'Enter') {
+            changeExpr();
+        }
+    });
     changeExpr();
+
+    let riemann = document.getElementById('riemannZeta');
+    riemann.addEventListener('click', () => {
+        let e = ComplexExpr.sum(k => new ComplexExpr(EXPR_BINARY, '^', new ComplexExpr(EXPR_VALUE, [1/k, 0]), new ComplexExpr(EXPR_NAME, 'z')), 1, 100);
+        renderer.setExpr(e.toGLSL());
+        drawCallback();
+    });
 
     let funcSamples = document.getElementsByClassName('funcSample');
     for(let i = 0; i < funcSamples.length; i++) {
@@ -232,6 +243,5 @@ function onLoad() {
             changeExpr();
         });
     }
-
 }
 window.addEventListener('load', onLoad);

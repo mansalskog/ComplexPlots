@@ -143,18 +143,18 @@ function ComplexExpr(type) {
 }
 
 ComplexExpr.prototype.toString = function() {
-  switch (this.type) {
-  case EXPR_VALUE:
-    return this.value.toString();
-  case EXPR_NAME:
-    return this.name;
-  case EXPR_UNARY:
-    // no parenthesis because unary have (second) highest precendence
-    return this.opSym + ' ' + this.target.toString();
-  case EXPR_BINARY:
-    // parenthezised to guarantee correct parsing
-    return '(' + this.left.toString() + ' ' + this.opSym + ' ' + this.right.toString() + ')';
-  }
+    switch (this.type) {
+    case EXPR_VALUE:
+        return '(' + this.value[0] + '+' + this.value[1] + 'i)';
+    case EXPR_NAME:
+        return this.name;
+    case EXPR_UNARY:
+        // no parenthesis because unary have (second) highest precendence
+        return this.opSym + ' ' + this.target.toString();
+    case EXPR_BINARY:
+        // parenthezised to guarantee correct parsing
+        return '(' + this.left.toString() + ' ' + this.opSym + ' ' + this.right.toString() + ')';
+    }
 };
 
 const GLSL_DIGITS = 8; // 2 for testing, set to 8 for exact numbers
@@ -162,22 +162,39 @@ const GLSL_DIGITS = 8; // 2 for testing, set to 8 for exact numbers
 ComplexExpr.prototype.toGLSL = function() {
     switch (this.type) {
     case EXPR_VALUE:
-        return 'vec2(' + this.value.re.toFixed(GLSL_DIGITS) + ',' + this.value.im.toFixed(GLSL_DIGITS) + ')';
+        return 'vec2(' + this.value[0].toFixed(GLSL_DIGITS) + ',' + this.value[1].toFixed(GLSL_DIGITS) + ')';
     case EXPR_NAME:
         return 'z';
     case EXPR_UNARY:
         let target = this.target.toGLSL();
-        let unMethod = UNARY_OPS[this.opSym];
-        return unMethod + '(' + target + ')';
+        if (this.opSym == '-') {
+            return '(-' + target + ')';
+        } else {
+            let unMethod = UNARY_OPS[this.opSym];
+            return unMethod + '(' + target + ')';
+        }
     case EXPR_BINARY:
         let left = this.left.toGLSL();
         let right = this.right.toGLSL();
-        let binMethod = BINARY_OPS[this.opSym];
-        return binMethod + '(' + left + ',' + right + ')';
+        // TODO make this less ugly
+        if (this.opSym == '+') {
+            return '(' + left + '+' + right + ')';
+        } else if (this.opSym == '-') {
+            return '(' + left + '-' + right + ')';
+        } else {
+            let binMethod = BINARY_OPS[this.opSym];
+            return binMethod + '(' + left + ',' + right + ')';
+        }
     }
 }
 
-// TODO: Create a function for replacing a EXPR_NAME with another arbitrary ComplexExpr
+ComplexExpr.sum = function(f, start, end) {
+    let e = f(start);
+    for (let k = start + 1; k <= end; k++) {
+        e = new ComplexExpr(EXPR_BINARY, '+', e, f(k));
+    }
+    return e;
+}
 
 /* Here follows a simple (probably quite buggy) parser for complex expressions. */
 
@@ -192,21 +209,21 @@ ComplexExpr.parse = function(txt) {
 /* Parses a real or imaginary number. For use with ComplexExpr. Returns null on leading spaces.
  * Returns an array [z, txt], containing the number (or null) and the remaning text.
  */
-Complex.parseSingle = function(txt) {
-  if (txt.startsWith('i')) {
-    return [new Complex(0, 1), txt.slice(1)];
-  }
-  let match = /^\d+(\.\d+)?i/.exec(txt);
-  if (match) {
-    let im = match[0];
-    return [new Complex(0, Number.parseFloat(im)), txt.slice(im.length)];
-  }
-  match = /^\d+(\.\d+)?/.exec(txt);
-  if (match) {
-    let re = match[0];
-    return [new Complex(Number.parseFloat(re), 0), txt.slice(re.length)];
-  }
-  return [null, txt];
+ComplexExpr.parseSingle = function(txt) {
+    if (txt.startsWith('i')) {
+        return [[0, 1], txt.slice(1)];
+    }
+    let match = /^\d+(\.\d+)?i/.exec(txt);
+    if (match) {
+        let im = match[0];
+        return [[0, Number.parseFloat(im)], txt.slice(im.length)];
+    }
+    match = /^\d+(\.\d+)?/.exec(txt);
+    if (match) {
+        let re = match[0];
+        return [[Number.parseFloat(re), 0], txt.slice(re.length)];
+    }
+    return [null, txt];
 };
 
 
@@ -215,7 +232,7 @@ Complex.parseSingle = function(txt) {
  */
 ComplexExpr.parseValueOrName = function(txt) {
   let tst = txt.replace(/^\s+/, '');
-  let [z, rem] = Complex.parseSingle(tst); // also takes care of lone imaginary unit
+  let [z, rem] = ComplexExpr.parseSingle(tst);
   if (z) {
     return [new ComplexExpr(EXPR_VALUE, z), rem];
   }

@@ -28,18 +28,20 @@
       </p>
       <p id="infoText">
       </p>
-      <p>
+      <p id="samples">
         <h3>Clickable examples</h3>
         Two zeroes and one double zero:
-        <button class="funcSample">(z+2)^2 * (z-1-2i) * (z+i)</button><br>
+        <button class="funcSample">(z+2)^2 * (z-1-2i) * (z+i)</button><br/>
         A Möbuis transformation:
-        <button class="funcSample">(z-1) / (z+1)</button><br>
+        <button class="funcSample">(z-1) / (z+1)</button><br/>
         Two zeroes, a double zero and a triple pole:
-        <button class="funcSample">(z-2)^2 * (z+1-2i) * (z+2+2i) / z^3</button><br>
+        <button class="funcSample">(z-2)^2 * (z+1-2i) * (z+2+2i) / z^3</button><br/>
         The sine function:
-        <button class="funcSample">(exp(i*z) - exp(-i*z)) / 2i</button><br>
+        <button class="funcSample">(exp(i*z) - exp(-i*z)) / 2i</button><br/>
         An essential singularity:
-        <button class="funcSample">sin(1/z)</button><br>
+        <button class="funcSample">sin(1/z)</button><br/>
+        The first 100 terms of the Riemann zeta function
+        <button id="riemannZeta">ζ(z) = ∑(1/k^z)</button><br/>
       </p>
     </div>
     <div id="information">
@@ -51,28 +53,28 @@
         <pre>
           Expr := Sums
           Sums := Products "+" Sums
-          | Products "-" Sums
-          | Products
+                | Products "-" Sums
+                | Products
           Products := Power "*" Products
-          | Power "/" Products
-          | Power
+                    | Power "/" Products
+                    | Power
           Power := Unary "^" Unary
           Unary := "-" Paren
-          | "exp" Paren
-          | "Log" Paren
-          | Paren
+                 | "exp" Paren
+                 | "Log" Paren
+                 | Paren
           Paren := "(" Sums ")"
-          | Value
-          | Name
+                 | Value
+                 | Name
           Name := "a" | "b" | ... | "h" | "j" | ... | "z"
           Value := Number | Number "i"
           Number := Digits
-          | Digits "." Digits
+                  | Digits "." Digits
         </pre>
       </p>
       <h2>The color formula</h2>
       <p>
-        Let z be the complex number and r,g,b the components of the color.
+        z is the complex number and r,g,b the components of the color.
         frac(x) means the fractional part of x.
         <pre>
           l = frac(log<sub>2</sub> z),
@@ -82,13 +84,6 @@
           b = 0
         </pre>
       </p>
-      <h2>Known bugs / to-do</h2>
-      <ul>
-        <li>Parsing of powers is left-associative when it should be right associative</li>
-        <li>There should be error messages if the expression does not parse</li>
-        <li>The rendering is quite slow, probably because evaluating functions is done in a very inefficient way</li>
-        <li>If it's possible to make the renderer fast enough, add support for moving and zooming the viewport with drag and scroll</li>
-      </ul>
     </div>
   </body>
 </html>
