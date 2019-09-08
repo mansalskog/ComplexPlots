@@ -4,15 +4,14 @@
     <meta charset="utf-8">
     <title>Complex plots</title>
     <script src="complex.js"></script>
-    <script src="plots.js"></script>
-    <script src="tests.js"></script>
+    <script src="glplots.js"></script>
     <style>
-input[type="number"] {
-  width: 3em;
-}
-#program {
-  text-align: center;
-}
+      input[type="number"] {
+          width: 3em;
+      }
+      #program {
+          text-align: center;
+      }
     </style>
   </head>
   <body>
@@ -23,7 +22,7 @@ input[type="number"] {
       <p>
         f(z) =
         <input id="function" type="text" size="80" value="z">
-        <!-- expanded form of (z + 2) ^ 2 * (z - 1 - 2i) * (z + i) 
+        <!-- expanded form of (z + 2) ^ 2 * (z - 1 - 2i) * (z + i)
              because the parser does not support parentheses -->
         <button id="draw">Draw</button>
       </p>
@@ -53,30 +52,30 @@ input[type="number"] {
     </div>
     <div id="information">
       <h1>About</h1>
-        This is an interative JavaScript implementation of domain coloring for complex functions.
-        It's inspired by Hans Lundmark's <a href="http://users.mai.liu.se/hanlu09/complex/domain_coloring.html">page on the topic</a>.
+      This is an interative JavaScript implementation of domain coloring for complex functions.
+      It's inspired by Hans Lundmark's <a href="http://users.mai.liu.se/hanlu09/complex/domain_coloring.html">page on the topic</a>.
       <h2>Expression syntax</h2>
       <p>
         <pre>
-Expr := Sums
-Sums := Products "+" Sums
-      | Products "-" Sums
-      | Products
-Products := Power "*" Products
+          Expr := Sums
+          Sums := Products "+" Sums
+          | Products "-" Sums
+          | Products
+          Products := Power "*" Products
           | Power "/" Products
           | Power
-Power := Unary "^" Unary
-Unary := "-" Paren
-       | "exp" Paren
-       | "Log" Paren
-       | Paren
-Paren := "(" Sums ")"
-       | Value
-       | Name
-Name := "a" | "b" | ... | "h" | "j" | ... | "z"
-Value := Number | Number "i"
-Number := Digits
-        | Digits "." Digits
+          Power := Unary "^" Unary
+          Unary := "-" Paren
+          | "exp" Paren
+          | "Log" Paren
+          | Paren
+          Paren := "(" Sums ")"
+          | Value
+          | Name
+          Name := "a" | "b" | ... | "h" | "j" | ... | "z"
+          Value := Number | Number "i"
+          Number := Digits
+          | Digits "." Digits
         </pre>
       </p>
       <h2>The color formula</h2>

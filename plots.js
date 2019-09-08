@@ -46,8 +46,8 @@ window.addEventListener('load', function() {
   let maxImIn = document.getElementById('maxIm');
 
   let drawCallback = () => drawComplexFunc(canvas, funcInput.value,
-                                                             parseFloat(minReIn.value), parseFloat(minImIn.value),
-                                                             parseFloat(maxReIn.value), parseFloat(maxImIn.value));
+                                           parseFloat(minReIn.value), parseFloat(minImIn.value),
+                                           parseFloat(maxReIn.value), parseFloat(maxImIn.value));
   drawButton.addEventListener('click', drawCallback);
   funcInput.addEventListener('keyup', (e) => {
     if (e.key == 'Enter') {
@@ -67,7 +67,6 @@ window.addEventListener('load', function() {
   let allLims = document.getElementById('allLims');
   allLims.addEventListener('input', function() {
     if (parseFloat(allLims.value) >= 0) {
-      // ugly javascript type shenanigans
       maxReIn.value = maxImIn.value = allLims.value;
       minReIn.value = minImIn.value = -allLims.value;
     }
