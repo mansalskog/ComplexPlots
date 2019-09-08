@@ -10,7 +10,7 @@ Complex.fromPolar = function(abs, arg) {
 /* Reads a complex number from a string. Not for use with ComplexExpr.
  */
 Complex.fromString = function(txt) {
-  const NUM_REGEX = '-?\\d+(\\.\\d+)?'; 
+  const NUM_REGEX = '-?\\d+(\\.\\d+)?';
   const RE_REGEX = new RegExp('^' + NUM_REGEX);
   const IM_REGEX = new RegExp('^' + NUM_REGEX + 'i');
   const CPX_REGEX = new RegExp('^' + NUM_REGEX + '\\s*\\+\\s*' + NUM_REGEX + 'i');
@@ -100,20 +100,20 @@ Complex.prototype.sin = function() {
 
 // mapping from symbol/token to method name
 const BINARY_OPS = {
-  '+': 'add',
-  '-': 'sub',
-  '*': 'mul',
-  '/': 'div',
-  '^': 'pow'
+    // TODO use regular plus and minus in glsl...
+    '+': 'add',
+    '-': 'sub',
+    '*': 'mul',
+    '/': 'div',
+    '^': 'cpow'
 };
 const UNARY_OPS = {
-  '-': 'neg',
-  'Log': 'log',
-  'exp': 'exp',
-  'sin': 'sin',
-  // TODO: maybe add trailing spaces to prevent things like "expz"
-  // TODO: trigonometric functions (and hyperbolic)
+    '-': 'neg',
+    'Log': 'clog',
+    'exp': 'cexp',
+    'sin': 'csin',
 };
+
 
 const EXPR_BINARY = 'binary';
 const EXPR_UNARY = 'unary';
@@ -156,30 +156,25 @@ ComplexExpr.prototype.toString = function() {
   }
 };
 
-/* Evaluates a function of one variable.
- * Takes a name (String) and a Complex.
- * Returns a Complex.
- */
-ComplexExpr.prototype.eval = function(name, value) {
-  switch (this.type) {
-  case EXPR_VALUE:
-    return this.value;
-  case EXPR_NAME:
-    if (this.name != name) {
-      throw 'Expression is not a function of one variable, found "' + this.name + '".'
+const GLSL_DIGITS = 2; // 2 for testing, set to 8 for exact numbers
+
+ComplexExpr.prototype.toGLSL = function() {
+    switch (this.type) {
+    case EXPR_VALUE:
+        return 'vec2(' + this.value.re.toFixed(GLSL_DIGITS) + ',' + this.value.im.toFixed(GLSL_DIGITS) + ')';
+    case EXPR_NAME:
+        return 'pos';
+    case EXPR_UNARY:
+        let target = this.target.toGLSL();
+        let unMethod = UNARY_OPS[this.opSym];
+        return unMethod + '(' + target + ')';
+    case EXPR_BINARY:
+        let left = this.left.toGLSL();
+        let right = this.right.toGLSL();
+        let binMethod = BINARY_OPS[this.opSym];
+        return binMethod + '(\n' + left + ',\n' + right + ')';
     }
-    return value;
-  case EXPR_UNARY:
-    let target = this.target.eval(name, value);
-    let unMethod = UNARY_OPS[this.opSym];
-    return target[unMethod]();
-  case EXPR_BINARY:
-    let left = this.left.eval(name, value);
-    let right = this.right.eval(name, value);
-    let binMethod = BINARY_OPS[this.opSym];
-    return left[binMethod](right);
-  }
-};
+}
 
 // TODO: Create a function for replacing a EXPR_NAME with another arbitrary ComplexExpr
 

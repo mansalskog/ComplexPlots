@@ -1,18 +1,32 @@
 const vertexSource = `
 attribute vec2 aPosition;
+
 void main() {
   gl_Position = vec4(aPosition, 0.0, 1.0);
 }
 `;
 
-const fragmentSource = `
+function fragmentSource(glslExpr) {
+    let source = `
 precision mediump float;
 
 #define PI 3.1415926535
 
-#define mul(z, w) vec2(z.x * w.x - z.y * w.y, z.y * w.x + z.x * w.y)
+// TODO remove these
+#define add(z, w) (z + w)
+#define sub(z, w) (z - w)
+#define neg(z) (-z)
+
+// these are neccesary
 #define conj(z) vec2(z.x, -z.y)
-#define div(z, w) vec2(z.x * w.x + z.y * w.y, z.y * w.x - z.x * w.y) / length(w)
+#define mul(z, w) vec2(z.x * w.x - z.y * w.y, z.y * w.x + z.x * w.y)
+#define div(z, w) vec2(z.x * w.x + z.y * w.y, z.y * w.x - z.x * w.y) / length(w) / length(w)
+#define clog(z) vec2(log(length(z)), atan(z.y, z.x))
+#define cexp(z) vec2(exp(z.x) * cos(z.y), exp(z.x) * sin(z.y))
+
+vec2 cpow(vec2 z, vec2 w) {
+  return cexp(mul(clog(z), w));
+}
 
 float fracPart(float x) {
   return x - floor(x);
@@ -20,23 +34,35 @@ float fracPart(float x) {
 
 vec4 colorOf(vec2 z) {
   float l = fracPart(log(length(z)) / log(2.0));
-  float h = fracPart(atan(z.y, z.x) / (2.0 * PI) + 0.25);
+  float h = fracPart(atan(z.y, z.x) / (2.0 * PI));
   return vec4(l * min(2.0 * h, 1.0), l * h, 0.0, 1.0);
 }
 
 uniform vec2 uViewportSize;
+uniform float uScale;
+uniform vec2 uTranslation;
+
 void main() {
-  vec2 pos = 2.0 * gl_FragCoord.xy / uViewportSize - vec2(1.0);
-  pos = div(pos, vec2(0, 1));
+  vec2 pos = (2.0 * gl_FragCoord.xy / uViewportSize - vec2(1.0)) * uScale;
+  pos = ${glslExpr};
   gl_FragColor = colorOf(pos);
 }
 `;
+    return source;
+}
+
 
 function drawPlot(canvas, text, minRe, minIm, maxRe, maxIm) {
+    let t = performance.now();
+
     let expr = ComplexExpr.parse(text);
     let gl = canvas.getContext('webgl');
 
-    let program = buildProgram(gl, vertexSource, fragmentSource);
+    let glslExpr = expr.toGLSL();
+    console.log('parsed expression as', expr.toGLSL());
+
+    let fs = fragmentSource(glslExpr);
+    let program = buildProgram(gl, vertexSource, fs);
     if (!program) {
         return;
     }
@@ -46,11 +72,17 @@ function drawPlot(canvas, text, minRe, minIm, maxRe, maxIm) {
     gl.enableVertexAttribArray(aPosition);
     let viewportSize = gl.getUniformLocation(program, 'uViewportSize');
     gl.uniform2f(viewportSize, canvas.height, canvas.width);
+    let scale = gl.getUniformLocation(program, 'uScale');
+    gl.uniform1f(scale, 3.0);
+    let translation = gl.getUniformLocation(program, 'uTranslation');
+    gl.uniform2f(translation, 0.0, 0.0);
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    console.log('drew function in', performance.now() - t, 'ms');
 }
 
 function createBuffers(gl) {
