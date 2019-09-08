@@ -103,15 +103,16 @@ const BINARY_OPS = {
     // TODO use regular plus and minus in glsl...
     '+': 'add',
     '-': 'sub',
-    '*': 'mul',
-    '/': 'div',
-    '^': 'cpow'
+    '*': 'c_mul',
+    '/': 'c_div',
+    '^': 'c_pow'
 };
 const UNARY_OPS = {
     '-': 'neg',
-    'Log': 'clog',
-    'exp': 'cexp',
-    'sin': 'csin',
+    'Log': 'c_log',
+    'exp': 'c_exp',
+    'sin': 'c_sin',
+    'cos': 'c_cos',
 };
 
 
@@ -156,14 +157,14 @@ ComplexExpr.prototype.toString = function() {
   }
 };
 
-const GLSL_DIGITS = 2; // 2 for testing, set to 8 for exact numbers
+const GLSL_DIGITS = 8; // 2 for testing, set to 8 for exact numbers
 
 ComplexExpr.prototype.toGLSL = function() {
     switch (this.type) {
     case EXPR_VALUE:
         return 'vec2(' + this.value.re.toFixed(GLSL_DIGITS) + ',' + this.value.im.toFixed(GLSL_DIGITS) + ')';
     case EXPR_NAME:
-        return 'pos';
+        return 'z';
     case EXPR_UNARY:
         let target = this.target.toGLSL();
         let unMethod = UNARY_OPS[this.opSym];
@@ -172,7 +173,7 @@ ComplexExpr.prototype.toGLSL = function() {
         let left = this.left.toGLSL();
         let right = this.right.toGLSL();
         let binMethod = BINARY_OPS[this.opSym];
-        return binMethod + '(\n' + left + ',\n' + right + ')';
+        return binMethod + '(' + left + ',' + right + ')';
     }
 }
 
